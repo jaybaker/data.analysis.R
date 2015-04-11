@@ -260,17 +260,12 @@ Notes:
 #http://bit.ly/gridExtra
 install.packages("gridExtra")
 library(gridExtra)
-p1 <- qplot(x=age, data=pf, 
-            color=I('black'), fill=I('#F79420')) + 
-  scale_x_continuous(breaks=seq(10,90,5), limit=c(10,90))
-p1log <- qplot(x=age, data=pf, ylab="Log10 Count",
-               color=I('black'), fill=I('#F79420')) + 
-  scale_y_log10() + 
-  scale_x_continuous(breaks=seq(10,90,5), limit=c(10,90))
-p1sqrt <- qplot(x=age, data=pf, ylab="Sqrt Count",
-                color=I('black'), fill=I('#F79420')) + 
-  scale_y_sqrt() + 
-  scale_x_continuous(breaks=seq(10,90,5), limit=c(10,90))
+p1 <- qplot(x=friend_count, data=pf, 
+            color=I('black'), fill=I('#F79420')) #+ scale_x_continuous(breaks=seq(10,90,5), limit=c(10,90))
+p1log <- qplot(x=log10(friend_count + 1), data=pf, xlab="Log10 Friend Count",
+               color=I('black'), fill=I('#F79420')) #+scale_x_continuous(breaks=seq(10,90,5), limit=c(10,90))
+p1sqrt <- qplot(x=sqrt(friend_count), data=pf, xlab="Sqrt Friend Count",
+                color=I('black'), fill=I('#F79420')) #+ scale_x_continuous(breaks=seq(10,90,5), limit=c(10,90))
 grid.arrange(p1, p1log, p1sqrt)
 ```
 
@@ -280,7 +275,13 @@ grid.arrange(p1, p1log, p1sqrt)
 ### Frequency Polygons
 
 ```{r Frequency Polygons}
-
+qplot(x=friend_count, 
+      y=..count../sum(..count..),
+      data=subset(pf, !is.na(gender)),
+      xlab="Friend Count",
+      ylab="Proportion of users with that Friend Count",
+      binwidth=10, geom='freqpoly', color=gender) +
+  scale_x_continuous(lim=c(0,1000), breaks=seq(0, 1000, 50))
 ```
 
 ***
@@ -289,7 +290,21 @@ grid.arrange(p1, p1log, p1sqrt)
 Notes:
 
 ```{r Likes on the Web}
+names(pf)
+summary(pf$www_likes)
+qplot(x=www_likes, 
+      #y=..count../sum(..count..),
+      data=subset(pf, !is.na(gender)),
+      xlab="Likes (www)",
+      ylab="Count generating that many likes",
+      #binwidth=1, 
+      geom='freqpoly', color=gender) + 
+  scale_x_continuous() +
+  scale_x_log10()
+```
 
+```{r}
+by(pf$www_likes, pf$gender, sum)
 ```
 
 
@@ -299,13 +314,43 @@ Notes:
 Notes:
 
 ```{r Box Plots}
-
+qplot(x=gender, y=friend_count, 
+      data=subset(pf, !is.na(gender)), 
+      geom='boxplot')
 ```
 
 #### Adjust the code to focus on users who have friend counts between 0 and 1000.
+http://flowingdata.com/2008/02/15/how-to-read-and-use-a-box-and-whisker-plot/
+To limit the data, you can 
+1. select from the dataframe: data=subset(pf, !is.na(gender) & friend_count <= 1000)
+2. use ylim: ylim=c(0, 1000) as arg to qplot
+3. use a scaling layer: scale_y_continuous(limits=c(0, 1000))
+4. use a coord_cartesion layer: coord_cartesian(ylim=c(0, 1000))
+
+The first 3 methods actually change the data (remove data), 
+the last just doesn't draw it.
+```{r}
+qplot(x=gender, y=friend_count, 
+      data=subset(pf, !is.na(gender) & friend_count <= 1000), 
+      geom='boxplot')
+
+qplot(x=gender, y=friend_count, 
+      data=subset(pf, !is.na(gender)), 
+      geom='boxplot', ylim=c(0,1000))
+
+qplot(x=gender, y=friend_count, 
+      data=subset(pf, !is.na(gender)), 
+      geom='boxplot') +
+  scale_y_continuous(limits=c(0, 1000))
+
+qplot(x=gender, y=friend_count, 
+      data=subset(pf, !is.na(gender)), 
+      geom='boxplot') +
+  coord_cartesian(ylim=c(0, 1000))
+```
 
 ```{r}
-
+by(pf$friend_count, pf$gender, summary)
 ```
 
 ***
@@ -322,18 +367,32 @@ Response:
 #### Write about some ways that you can verify your answer.
 Response:
 ```{r Friend Requests by Gender}
-
+names(pf)
+by(pf$friendships_initiated, pf$gender, summary)
+qplot(x=gender, y=friendships_initiated, 
+      data=subset(pf, !is.na(gender)), 
+      geom='boxplot') +
+  coord_cartesian(ylim=c(0, 250))
 ```
 
 Response:
-
+women initiate more friend requests
+Confirm by looking at median and the summary statistics.
 ***
 
 ### Getting Logical
 Notes:
 
 ```{r Getting Logical}
-
+summary(pf$mobile_likes)
+summary(pf$mobile_likes > 0)
+pf$mobile_check_in <- NA
+pf$mobile_check_in <- ifelse(pf$mobile_likes > 0, 1, 0)
+pf$mobile_check_in <- factor(pf$mobile_check_in)
+summary(pf$mobile_check_in)
+# what percent use mobile
+length(subset(pf, mobile_check_in == 1)$mobile_check_in) / length(pf$mobile_check_in)
+sum(pf$mobile_check_in == 1) / length(pf$mobile_check_in)
 ```
 
 Response:
@@ -342,6 +401,10 @@ Response:
 
 ### Analyzing One Variable
 Reflection:
+Use plots and use them early. 
+Look at each variable and its distribution. 
+Identify outliers and think about that means in the dataset.
+Use transforms to explore long tails or other data that is hard to "fit" in a plot.
 
 ***
 
