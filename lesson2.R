@@ -1,0 +1,5 @@
+getwd()
+setwd('~/classes/R.class')
+statesInfo <- read.csv('stateData.csv')
+stateSubset <- subset(statesInfo, state.region == 1)
+subset(statesInfo, murder > 10, X)
