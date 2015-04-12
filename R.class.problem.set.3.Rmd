@@ -4,19 +4,101 @@ author: "Jay Baker"
 date: "04/11/2015"
 output: html_document
 ---
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
+library(ggplot)
+data(diamonds)
+```
 
 ```{r}
-summary(cars)
+summary(diamonds)
+str(diamonds)
 ```
 
-You can also embed plots, for example:
+```{r}
+qplot(x=price, data=diamonds, color=I('black'), 
+  fill=I('#F79420')) +
+  scale_x_continuous(breaks=seq(0,19000,1000), lim=c(0,19000))
+summary(diamonds$price)
+```
+The mean is 3933 and the median is 2401. There is a big spike around $1000. There is a reasonably long tail. The max is 18820.
 
-```{r, echo=FALSE}
-plot(cars)
+```{r}
+length(subset(diamonds, price < 500)$price)
+length(subset(diamonds, price < 250)$price)
+length(subset(diamonds, price >= 15000)$price)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Explore the largest peak
+```{r}
+qplot(x=price, data=diamonds, color=I('black'), 
+  fill=I('#F79420'), binwidth=1) +
+  scale_x_continuous(breaks=seq(0,1500,100), lim=c(0,1500))
+qplot(x=price, data=diamonds, color=I('black'), 
+  fill=I('#F79420'), binwidth=100) +
+  scale_x_continuous(breaks=seq(0,1500,100), lim=c(0,1500))
+```
+
+Diamond prices by cut
+```{r}
+qplot(x=price, data=diamonds, color=I('black'), 
+  fill=I('#F79420')) +
+  facet_wrap(~cut) +
+  scale_x_continuous(breaks=seq(0,19000,1000), lim=c(0,19000))
+```
+
+```{r}
+levels(diamonds$cut)
+by(diamonds$price, diamonds$cut, summary) # notice how summary rounds to nearest 10
+by(diamonds$price, diamonds$cut, max)
+by(diamonds$price, diamonds$cut, min)
+```
+
+```{r}
+qplot(x = price, data = diamonds) + facet_wrap(~cut, scales="free_y")
+```
+
+```{r}
+# Create a histogram of price per carat
+# and facet it by cut.
+qplot(x = price/carat, data = diamonds, 
+      ylab="Count", xlab="Price per Carat (log10)", binwidth=0.05) + 
+  scale_x_log10() +
+  facet_wrap(~cut, scales="free_y")
+```
+
+Price Box Plots
+```{r}
+str(diamonds$clarity)
+by(diamonds$price, diamonds$clarity, summary)
+qplot(x=clarity, y=price, data=diamonds, 
+      geom='boxplot')
+```
+
+Interquartile Range - IQR
+```{r}
+str(diamonds$color)
+levels(diamonds$color)
+by(diamonds$price, diamonds$color, summary)
+IQR(subset(diamonds, color == 'D')$price)
+IQR(subset(diamonds, color == 'J')$price)
+```
+
+Price per Carat Box Plots by Color
+```{r}
+str(diamonds$color)
+by(diamonds$price, diamonds$color, summary)
+qplot(x=color, y=price/carat, data=diamonds, 
+      geom='boxplot')
+```
+
+Carat Frequency Polygon
+```{r}
+qplot(x=carat, 
+      data=diamonds,
+      xlab="Carat",
+      ylab="Count of diamonds with that carat",
+      binwidth=.01, 
+      geom='freqpoly')
+```
+
+
