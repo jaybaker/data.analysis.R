@@ -1,0 +1,139 @@
+---
+title: "R.class.problem.set.4"
+author: "Jay Baker"
+date: "04/18/2015"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(diamonds)
+library(dplyr)
+summary(diamonds)
+```
+
+Scatterplot price vs x
+```{r}
+ggplot(aes(x=x, y=price), data = diamonds) +
+  geom_point()
+```
+
+What are your observations?
+It looks like a non-linear, but increasing relationship.
+There are price points from x = 0.
+
+Correlation between price and x, y, z?
+```{r}
+cor.test(diamonds$price, diamonds$x)
+cor.test(diamonds$price, diamonds$y)
+cor.test(diamonds$price, diamonds$z)
+```
+
+Scatterplot price vs depth
+```{r}
+ggplot(aes(x=depth, y=price), data = diamonds) +
+  geom_point()
+```
+
+Use alpha and mark x axis
+```{r}
+ggplot(aes(x=depth, y=price), data = diamonds) +
+  geom_point(alpha=1/100) +
+  scale_x_continuous(breaks=seq(0, max(diamonds$depth), 2))
+```
+
+Correlation of depth vs price
+```{r}
+cor.test(diamonds$depth, diamonds$price)
+```
+
+Scatterplot price vs carat
+```{r}
+ggplot(aes(x=carat, y=price), data = diamonds) +
+  geom_point()
+```
+
+Add volume and plot price vs volume
+```{r}
+diamonds$volume <- diamonds$x * diamonds$y * diamonds$z
+summary(diamonds)
+ggplot(aes(x=volume, y=price), data = diamonds) +
+  geom_point()
+```
+
+Obesrvations?
+There is a volume outlier way out at approximately 3900.
+Roughly an exponential relationship between price and volume.
+```{r}
+detach("package:plyr", unload=TRUE)
+count(diamonds$volume == 0)
+```
+
+```{r}
+good_diamonds <- subset(diamonds, volume != 0 & volume <= 800)
+cor.test(good_diamonds$price, good_diamonds$volume)
+```
+
+```{r}
+ggplot(aes(x=volume, y=price), data = good_diamonds) +
+  geom_point(alpha=1/20)
+```
+Add a lnear smoother
+```{r}
+ggplot(aes(x=volume, y=price), data = good_diamonds) +
+  geom_point(alpha=1/20) +
+  stat_smooth(method = "lm", formula = y ~ x, size = 1)
+```
+
+```{r}
+clarity_groups <- group_by(diamonds, clarity)
+diamondsByClarity <- summarize(clarity_groups,
+                               mean_price=mean(price),
+                               median_price=median(as.numeric(price)),
+                               min_price=min(price),
+                               max_price=max(price),
+                               n=n())
+```
+
+```{r}
+library(gridExtra)
+diamonds_by_clarity <- group_by(diamonds, clarity)
+diamonds_mp_by_clarity <- summarise(diamonds_by_clarity, mean_price = mean(price))
+
+diamonds_by_color <- group_by(diamonds, color)
+diamonds_mp_by_color <- summarise(diamonds_by_color, mean_price = mean(price))
+str(diamonds_by_clarity)
+
+p1 <- ggplot(aes(x=clarity, y=mean_price), data=diamonds_mp_by_clarity) +
+  geom_bar(stat = "identity")
+p2 <- ggplot(aes(x=color, y=mean_price), data=diamonds_mp_by_color) +
+  geom_bar(stat = "identity")
+grid.arrange(p1, p2, ncol=1)
+```
+
+Gapminder data
+```{r}
+setwd('/home/jay/classes/R.class')
+library(tidyr)
+df <- read.csv('Gapminder.labor.to.population.csv', header=T, check.names=F)
+broadband <- read.csv('Gapminder.broadband.subscribers.csv', header=T, check.names=F)
+newdf = gather(df, 'year', 'labor', 2:ncol(df))
+broadband <- gather(broadband, 'year', 'subscribers', 2:ncol(broadband))
+merged <- merge(newdf, broadband, by=c("Country", "year"))
+us_data <- subset(merged, Country == 'United States')
+us_data <- na.omit(us_data)
+cor.test(as.numeric(us_data$labor), us_data$subscribers)
+head(us_data)
+p1 <- ggplot(aes(x=subscribers, y=labor), data=us_data) + 
+  geom_point() 
+p2 <- ggplot(aes(x=log10(subscribers), y=labor), data=us_data) + 
+  geom_point() 
+grid.arrange(p1, p2, ncol=1) # 1st plot
+
+ggplot(aes(x=subscribers, y=labor), data=us_data) + 
+  geom_point() +
+  stat_smooth(method = "lm", formula = y ~ x, size = 1)
+```

@@ -5,7 +5,7 @@ date: "04/11/2015"
 output: html_document
 ---
 ```{r}
-library(ggplot)
+library(ggplot2)
 data(diamonds)
 ```
 
@@ -99,6 +99,49 @@ qplot(x=carat,
       ylab="Count of diamonds with that carat",
       binwidth=.01, 
       geom='freqpoly')
+```
+
+Gapminder data
+Labor force to population comparison.
+```{r}
+setwd('/home/jay/classes/R.class')
+library(tidyr)
+df <- read.csv('Gapminder.labor.to.population.csv', header=T, check.names=F)
+names(df)
+head(df)
+newdf = gather(df, 'year', 'ratio', 2:ncol(df))
+names(newdf)
+head(newdf)
+tail(newdf)
+qplot(x=ratio, 
+      data=newdf,
+      xlab="Percent Labor Force",
+      binwidth=1) +
+  facet_wrap(~year)
+data1997 <- subset(newdf, year == 1997)
+data2007 <- subset(newdf, year == 2007)
+summary(data1997)
+summary(data2007)
+```
+
+Birthdays
+```{r}
+#install.packages('lubridate')
+library(lubridate)
+df <- read.csv('birthdaysExample.csv', header=T, check.names=F)
+df$formattedDates <- as.Date(df$dates, format='%m/%d/%y')
+head(df)
+qplot(x=formattedDates, 
+      data=df,
+      xlab="Date",
+      ylab="Count of birthdays",
+      binwidth=1)
+
+df$month <- month(df$formattedDates)
+df$day <- day(df$formattedDates)
+summary(df)
+table(df[,c("month","day")])
+
 ```
 
 
